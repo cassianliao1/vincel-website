@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>深澈 Vincel · 新电脑一键清爽，流氓软件清理工具</title>
+<style>
+  :root{
+    /* macOS 风格配色，和软件内UI完全统一 */
+    --bg:#F5F5F7;
+    --bg-deep:#ECECEE;
+    --panel:#FFFFFF;
+    --ink:#1D1D1F;
+    --ink-soft:#6E6E73;
+    --ink-faint:#86868B;
+    --primary:#165DFF;
+    --logo-blue:#0626AC; /* 和软件里 logo 用的深宝蓝完全一致，UI 强调色仍是 --primary，两者本来就不是同一个蓝 */
+    --primary-deep:#0E42D2;
+    --primary-bg:#E8F0FF;
+    --line:#D2D2D7;
+    --line-soft:#E5E5E7;
+    --success:#34C759;
+    --warning:#FF9500;
+    --danger:#FF3B30;
+
+    --font-ui: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", "Helvetica Neue", Arial, sans-serif;
+    --font-mono: "SF Mono", "Cascadia Code", Consolas, "Courier New", monospace;
+
+    --radius-s:8px;
+    --radius-m:12px;
+    --radius-l:20px;
+    --shadow-card: 0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.06);
+    --shadow-float: 0 12px 40px rgba(0,0,0,0.12);
+    --maxw:1180px;
+  }
+
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth; scroll-padding-top:80px;}
+  @media (prefers-reduced-motion: reduce){
+    html{scroll-behavior:auto;}
+    *{animation-duration:0.001ms !important; animation-iteration-count:1 !important; transition-duration:0.001ms !important;}
+  }
+  body{
+    margin:0;
+    font-family:var(--font-ui);
+    color:var(--ink);
+    background:var(--bg);
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3,h4{margin:0; font-weight:600; letter-spacing:-0.01em; color:var(--ink);}
+  p{margin:0;}
+  a{color:inherit; text-decoration:none;}
+  img,svg{display:block;}
+  button{font-family:inherit; cursor:pointer; border:none; background:none;}
+  input{font-family:inherit;}
+  .wrap{max-width:var(--maxw); margin:0 auto; padding:0 32px;}
+  :focus-visible{outline:2px solid var(--primary); outline-offset:2px; border-radius:4px;}
+
+  .eyebrow{
+    display:inline-flex; align-items:center; gap:8px;
+    font-size:13px; font-weight:600; letter-spacing:0.02em;
+    color:var(--primary);
+    margin-bottom:12px;
+  }
+
+  .tag{
+    display:inline-flex; align-items:center; gap:4px;
+    font-size:12px; font-weight:500; padding:3px 10px;
+    border-radius:999px; letter-spacing:0.01em;
+  }
+  .tag-pro{ background:var(--primary-bg); color:var(--primary); }
+  .tag-free{ background:#E8F9ED; color:var(--success); }
+  .tag-soon{ background:#FFF4E5; color:var(--warning); }
+
+  .btn{
+    display:inline-flex; align-items:center; justify-content:center; gap:8px;
+    padding:12px 22px; border-radius:var(--radius-s);
+    font-size:15px; font-weight:500; border:1px solid transparent;
+    transition:all .15s ease;
+    white-space:nowrap;
+  }
+  .btn-primary{
+    background:linear-gradient(180deg, #2E77F6 0%, #1450D6 100%);
+    color:#fff;
+    box-shadow:0 1px 2px rgba(14,66,210,0.25), inset 0 1px 0 rgba(255,255,255,0.15);
+  }
+  .btn-primary:hover{ background:linear-gradient(180deg, #2568EA 0%, #0E42D2 100%); transform:translateY(-1px); }
+  .btn-ghost{ background:var(--panel); color:var(--ink); border-color:var(--line); }
+  .btn-ghost:hover{ border-color:var(--primary); color:var(--primary); }
+  .btn-sm{ padding:8px 16px; font-size:13px; }
+  .btn-block{ width:100%; }
+
+  /* 导航栏 */
+  .nav{
+    position:sticky; top:0; z-index:100;
+    background:rgba(245,245,247,0.8);
+    backdrop-filter:blur(20px);
+    -webkit-backdrop-filter:blur(20px);
+    border-bottom:1px solid var(--line-soft);
+  }
+  .nav .wrap{ display:flex; align-items:center; justify-content:space-between; height:64px; }
+  .brand{ display:flex; align-items:center; gap:8px; font-weight:600; font-size:17px; }
+  /* 官方标志：矢量路径直接取自软件本体（侧边栏/关于页），三处保证像素级一致，
+     不用图片文件，不会有白底方块，缩放到多大都清晰。 */
+  .site-logo{ display:flex; align-items:flex-end; gap:6px; }
+  .site-logo .logo-mark{ width:26px; height:26px; flex:none; display:block; }
+  .site-logo .logo-mark path{ fill:var(--logo-blue); }
+  .site-logo .logo-word{ display:flex; align-items:flex-start; gap:1px; }
+  .site-logo .logo-wordmark{ height:19px; width:auto; display:block; }
+  .site-logo .logo-wordmark path{ fill:var(--logo-blue); }
+  .site-logo .logo-tm{ font-size:7px; font-weight:700; line-height:1; color:var(--logo-blue); opacity:.6; margin-top:1px; }
+  .site-logo .logo-divider{ width:1px; height:16px; background:var(--line); margin:0 1px; }
+  .site-logo .logo-cn{ font-size:16px; font-weight:600; color:var(--ink); letter-spacing:1px; }
+  /* 页脚背景是深色，标志改用白色，透明度呼应页脚文字的整体灰度 */
+  .foot-brand .site-logo .logo-mark path,
+  .foot-brand .site-logo .logo-wordmark path{ fill:#fff; }
+  .foot-brand .site-logo .logo-tm{ color:#fff; }
+  .foot-brand .site-logo .logo-divider{ background:rgba(255,255,255,0.25); }
+  .foot-brand .site-logo .logo-cn{ color:#fff; }
+  .nav-links{ display:flex; align-items:center; gap:28px; font-size:14px; font-weight:400; color:var(--ink-soft); }
+  .nav-links a:hover{ color:var(--primary); }
+  .nav-right{ display:flex; align-items:center; gap:10px; }
+  .icon-btn{ width:36px; height:36px; display:flex; align-items:center; justify-content:center; border-radius:var(--radius-s); border:1px solid var(--line); color:var(--ink-soft); }
+  .icon-btn:hover{ border-color:var(--primary); color:var(--primary); }
+
+  /* 首屏 */
+  .hero{
+    position:relative; overflow:hidden;
+    padding:80px 0 60px;
+    background:var(--bg);
+  }
+  .hero::before{
+    content:""; position:absolute; top:-200px; left:50%; transform:translateX(-50%);
+    width:800px; height:600px;
+    background:radial-gradient(circle, rgba(22,93,255,0.08) 0%, transparent 70%);
+    pointer-events:none;
+  }
+  .hero .wrap{ display:grid; grid-template-columns:1fr 1fr; gap:60px; align-items:center; position:relative; }
+  .hero-copy h1{ font-size:48px; line-height:1.15; margin-bottom:20px; font-weight:700; }
+  .hero-copy h1 em{ font-style:normal; color:var(--primary-deep); }
+  .hero-sub{ font-size:17px; color:var(--ink-soft); max-width:480px; margin-bottom:28px; line-height:1.6; }
+  .hero-cta{ display:flex; align-items:center; gap:12px; margin-bottom:32px; flex-wrap:wrap; }
+  .hero-cta .btn-primary{ padding:14px 28px; font-size:15px; }
+  .trust-row{ display:flex; flex-wrap:wrap; gap:8px 20px; }
+  .trust-row span{ display:flex; align-items:center; gap:6px; font-size:13.5px; font-weight:500; color:var(--ink-soft); }
+  .trust-row svg{ width:15px; height:15px; color:var(--success); flex-shrink:0; }
+
+  /* 软件窗口预览 */
+  .app-window{
+    background:var(--panel);
+    border-radius:var(--radius-l);
+    box-shadow:var(--shadow-float);
+    overflow:hidden;
+    border:1px solid var(--line-soft);
+  }
+  .window-titlebar{
+    height:38px;
+    background:var(--bg-deep);
+    display:flex;
+    align-items:center;
+    padding:0 14px;
+    gap:8px;
+    border-bottom:1px solid var(--line-soft);
+  }
+  .traffic-light{ width:12px; height:12px; border-radius:50%; }
+  .traffic-light.red{ background:#FF5F57; }
+  .traffic-light.yellow{ background:#FFBD2E; }
+  .traffic-light.green{ background:#28C840; }
+  .window-title{ flex:1; text-align:center; font-size:13px; color:var(--ink-faint); font-weight:500; }
+  .window-content{ padding:20px; }
+  .scan-status{ display:flex; align-items:center; gap:8px; font-size:13px; color:var(--success); font-weight:500; margin-bottom:16px; }
+  .scan-pulse{ width:8px; height:8px; border-radius:50%; background:var(--success); animation:pulse 1.6s ease-in-out infinite; }
+  @keyframes pulse{ 0%,100%{ box-shadow:0 0 0 0 rgba(52,199,89,0.5);} 70%{ box-shadow:0 0 0 6px rgba(52,199,89,0);} }
+  .scan-item{
+    display:flex; align-items:center; gap:12px;
+    padding:12px 14px;
+    background:var(--bg);
+    border-radius:var(--radius-m);
+    margin-bottom:8px;
+  }
+  .scan-item:last-child{ margin-bottom:0; }
+  .scan-check{ width:18px; height:18px; border-radius:4px; background:var(--primary); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .scan-check svg{ width:11px; height:11px; color:#fff; }
+  .scan-item-info{ flex:1; min-width:0; }
+  .scan-item-name{ font-size:14px; font-weight:500; color:var(--ink); }
+  .scan-item-path{ font-size:12px; color:var(--ink-faint); font-family:var(--font-mono); margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .risk-badge{ font-size:11px; font-weight:600; padding:3px 8px; border-radius:6px; flex-shrink:0; }
+  .risk-badge.high{ background:#FFEBEA; color:var(--danger); }
+  .risk-badge.mid{ background:#FFF4E5; color:var(--warning); }
+  .scan-footer{
+    margin-top:16px; padding-top:16px; border-top:1px solid var(--line-soft);
+    display:flex; justify-content:space-between; align-items:center;
+    font-size:13px; color:var(--ink-soft);
+  }
+  .scan-footer .count{ color:var(--danger); font-weight:600; }
+
+  /* 数据条 */
+  .statusbar{ background:var(--ink); color:#fff; }
+  .statusbar .wrap{
+    display:flex; align-items:center; justify-content:center; gap:0;
+    padding:14px 32px; flex-wrap:wrap; font-size:13px;
+  }
+  .statusbar .item{ display:flex; align-items:center; gap:8px; padding:0 24px; }
+  .statusbar .sep{ width:1px; height:14px; background:rgba(255,255,255,0.15); }
+  .statusbar .dot{ width:7px; height:7px; border-radius:50%; background:var(--success); animation:pulse2 1.6s ease-in-out infinite; }
+  @keyframes pulse2{ 0%,100%{opacity:1;} 50%{opacity:0.5;} }
+  .statusbar .num{ font-family:var(--font-mono); color:#fff; font-weight:600; }
+  .statusbar .item .label{ color:rgba(255,255,255,0.6); }
+
+  /* 通用区块 */
+  .section{ padding:80px 0; }
+  .section-head{ max-width:640px; margin-bottom:48px; }
+  .section-head.center{ margin-left:auto; margin-right:auto; text-align:center; }
+  .section-head h2{ font-size:34px; line-height:1.2; margin-bottom:12px; font-weight:700; }
+  .section-head p{ font-size:16px; color:var(--ink-soft); line-height:1.6; }
+  .section-alt{ background:var(--panel); border-top:1px solid var(--line-soft); border-bottom:1px solid var(--line-soft); }
+
+  /* 功能卡片 */
+  .feature-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:20px; }
+  .feature-card{
+    background:var(--panel); border:1px solid var(--line-soft); border-radius:var(--radius-l);
+    padding:28px 24px; box-shadow:var(--shadow-card);
+    transition:transform .15s ease, box-shadow .15s ease;
+  }
+  .feature-card:hover{ transform:translateY(-2px); box-shadow:0 8px 24px rgba(0,0,0,0.08); }
+  .feature-card .fico{
+    width:44px; height:44px; border-radius:var(--radius-m); background:#F5F5F7;
+    display:flex; align-items:center; justify-content:center; margin-bottom:16px;
+    font-size:24px; line-height:1;
+  }
+  .feature-card .fhead{ display:flex; align-items:center; gap:8px; margin-bottom:8px; }
+  .feature-card h3{ font-size:17px; font-weight:600; }
+  .feature-card p{ font-size:14px; color:var(--ink-soft); line-height:1.6; }
+
+  /* 为什么选择 */
+  .trust-grid{ display:grid; grid-template-columns:repeat(2,1fr); gap:1px; background:var(--line-soft); border:1px solid var(--line-soft); border-radius:var(--radius-l); overflow:hidden; }
+  .trust-item{ background:var(--panel); padding:28px 30px; display:flex; gap:16px; }
+  .trust-item .n{
+    width:40px; height:40px; border-radius:var(--radius-m); background:var(--primary-bg);
+    display:flex; align-items:center; justify-content:center; flex-shrink:0;
+  }
+  .trust-item .n svg{ width:19px; height:19px; color:var(--primary); }
+  .trust-item h4{ font-size:17px; line-height:1.4; margin-bottom:8px; font-weight:600; }
+  .trust-item p{ font-size:14px; color:var(--ink-soft); line-height:1.6; }
+
+  /* 价格 */
+  .price-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:20px; align-items:stretch; }
+  .price-card{ background:var(--panel); border:1.5px solid var(--line-soft); border-radius:var(--radius-l); padding:32px 28px; display:flex; flex-direction:column; }
+  .price-card.featured{ border-color:var(--primary); box-shadow:0 12px 32px rgba(22,93,255,0.15); position:relative; }
+  .price-card.featured::before{
+    content:"推荐"; position:absolute; top:-12px; left:50%; transform:translateX(-50%);
+    background:var(--primary); color:#fff; font-size:12px; font-weight:500;
+    padding:4px 14px; border-radius:999px;
+  }
+  .price-card-top{ display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
+  .price-card h3{ font-size:18px; font-weight:600; }
+  .price-amount{ display:flex; align-items:baseline; gap:4px; margin:20px 0 4px; }
+  .price-amount .n{ font-size:40px; font-weight:700; letter-spacing:-0.02em; }
+  .price-amount .u{ font-size:14px; color:var(--ink-soft); font-weight:400; }
+  .price-note{ font-size:13px; color:var(--ink-faint); margin-bottom:24px; }
+  .price-list{ list-style:none; padding:0; margin:0 0 28px; display:flex; flex-direction:column; gap:12px; flex:1; }
+  .price-list li{ display:flex; gap:10px; font-size:14px; color:var(--ink-soft); line-height:1.5; }
+  .price-list li svg{ width:16px; height:16px; color:var(--success); flex-shrink:0; margin-top:2px; }
+  .price-list li.dim{ color:var(--ink-faint); }
+  .price-list li.dim svg{ color:var(--line); }
+  .price-hook{ font-size:13px; color:var(--ink-soft); background:var(--bg); border-radius:var(--radius-s); padding:12px 14px; margin-bottom:16px; line-height:1.5; }
+
+  /* 特征库 */
+  .lib-wrap{ display:grid; grid-template-columns:1fr 1fr; gap:48px; align-items:center; }
+  .lib-stats{ display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  .lib-stat{ background:var(--bg); border:1px solid var(--line-soft); border-radius:var(--radius-m); padding:20px; }
+  .lib-stat .v{ font-family:var(--font-mono); font-size:28px; font-weight:700; color:var(--primary); }
+  .lib-stat .l{ font-size:13px; color:var(--ink-soft); margin-top:4px; }
+  .lib-version{ display:inline-flex; align-items:center; gap:8px; font-family:var(--font-mono); font-size:13px; background:var(--bg); border:1px solid var(--line-soft); padding:6px 14px; border-radius:999px; margin-bottom:20px; color:var(--ink-soft); }
+  .lib-version b{ color:var(--ink); font-weight:600; }
+
+  /* 下载区 */
+  .dl-panel{
+    background:linear-gradient(135deg, #1D1D1F 0%, #2C2C2E 100%);
+    border-radius:var(--radius-l); padding:56px 48px; color:#fff;
+    display:flex; align-items:center; justify-content:space-between; gap:30px; flex-wrap:wrap;
+    position:relative; overflow:hidden;
+  }
+  .dl-panel::before{
+    content:""; position:absolute; inset:0;
+    background:radial-gradient(circle at 85% 20%, rgba(22,93,255,0.3), transparent 55%);
+  }
+  .dl-panel > *{ position:relative; }
+  .dl-panel h2{ color:#fff; font-size:30px; margin-bottom:10px; font-weight:700; }
+  .dl-meta{ display:flex; gap:16px; flex-wrap:wrap; font-size:13px; color:rgba(255,255,255,0.6); margin-top:16px; }
+  .dl-panel .btn-primary{ background:#fff; color:var(--primary); padding:16px 32px; font-size:15px; font-weight:600; }
+  .dl-panel .btn-primary:hover{ background:#F5F5F7; transform:translateY(-1px); }
+  .dl-note{ font-size:12px; color:rgba(255,255,255,0.5); margin-top:12px; }
+
+  /* 关于和打赏 */
+  .about-grid{ display:grid; grid-template-columns:1.3fr 1fr; gap:24px; }
+  .about-card, .donate-card{ background:var(--panel); border:1px solid var(--line-soft); border-radius:var(--radius-l); padding:32px; box-shadow:var(--shadow-card); }
+  .about-card h3, .donate-card h3{ font-size:18px; margin-bottom:12px; font-weight:600; }
+  .about-card p{ font-size:14px; color:var(--ink-soft); margin-bottom:16px; line-height:1.7; }
+  .license-row{ display:flex; gap:8px; flex-wrap:wrap; margin-top:16px; }
+  .qr-block{ width:100%; max-width:180px; margin:0 auto 12px; border:1.5px dashed var(--line); border-radius:var(--radius-m); display:flex; align-items:center; justify-content:center; flex-direction:column; gap:6px; color:var(--ink-faint); font-size:12px; text-align:center; padding:20px; background:var(--bg); }
+  .qr-block svg{ width:36px; height:36px; color:var(--ink-faint); }
+  .donate-card{ text-align:center; }
+  .donate-note{ font-size:13px; color:var(--ink-faint); line-height:1.6; }
+
+  /* 页脚 */
+  footer{ background:var(--ink); color:rgba(255,255,255,0.6); padding:48px 0 24px; }
+  .foot-top{ display:flex; justify-content:space-between; gap:40px; flex-wrap:wrap; margin-bottom:32px; }
+  .foot-brand{ color:#fff; font-weight:600; font-size:16px; display:flex; align-items:center; gap:8px; margin-bottom:10px; }
+  .foot-cols{ display:flex; gap:48px; flex-wrap:wrap; }
+  .foot-col h5{ color:#fff; font-size:13px; margin-bottom:12px; font-weight:600; }
+  .foot-col a, .foot-col p{ display:block; font-size:13px; color:rgba(255,255,255,0.6); margin-bottom:8px; }
+  .foot-col a:hover{ color:#fff; }
+  .foot-bottom{ border-top:1px solid rgba(255,255,255,0.1); padding-top:20px; display:flex; justify-content:space-between; flex-wrap:wrap; gap:10px; font-size:12px; }
+
+  /* 响应式 */
+  @media (max-width: 900px){
+    .hero .wrap{ grid-template-columns:1fr; gap:40px; }
+    .hero-copy h1{ font-size:36px; }
+    .feature-grid{ grid-template-columns:1fr; }
+    .trust-grid{ grid-template-columns:1fr; }
+    .price-grid{ grid-template-columns:1fr; }
+    .lib-wrap{ grid-template-columns:1fr; }
+    .about-grid{ grid-template-columns:1fr; }
+    .nav-links{ display:none; }
+    .statusbar .item:nth-child(6), .statusbar .sep:nth-child(5){ display:none; }
+    .dl-panel{ flex-direction:column; align-items:flex-start; padding:40px 28px; }
+  }
+  @media (max-width: 600px){
+    .wrap{ padding:0 20px; }
+    .section{ padding:56px 0; }
+    .hero{ padding:48px 0 40px; }
+    .hero-copy h1{ font-size:28px; }
+    .section-head h2{ font-size:26px; }
+    .statusbar .item:nth-child(4), .statusbar .sep:nth-child(3){ display:none; }
+  }
+
+  /* 滚动动画 */
+  .reveal{ opacity:0; transform:translateY(12px); transition:opacity .5s ease, transform .5s ease; }
+  .reveal.in{ opacity:1; transform:translateY(0); }
+</style>
+</head>
+<body>
+
+  <!-- 导航栏 -->
+  <nav class="nav">
+    <div class="wrap">
+      <a href="#top" class="brand site-logo" aria-label="深澈 Vincel 首页">
+        <svg class="logo-mark" viewBox="0 0 436 441" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Vincel">
+          <path d="M4.5 73.0 L4.0 75.0 L10.5 85.5 L69.5 201.5 L185.5 435.0 L280.0 435.5 L280.5 432.5 L216.0 302.5 L98.0 73.5 Z M430.0 4.0 L337.5 4.5 L245.5 180.0 L224.5 217.5 L218.0 232.0 L231.5 256.5 L264.5 322.5 L266.5 322.0 L287.0 281.5 L294.0 270.0 L319.0 219.5 L327.0 206.0 L358.0 144.5 L377.0 110.0 L384.0 94.5 L430.5 7.0 Z"/>
+        </svg>
+        <span class="logo-word">
+          <svg class="logo-wordmark" viewBox="0 0 993 262" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Vincel">
+            <path fill-rule="evenodd" d="M263.5 75.0 L263.0 256.0 L301.0 256.5 L301.5 82.5 L300.5 75.5 Z M604.5 76.0 L587.5 83.5 L575.0 92.0 L567.0 99.0 L553.5 117.5 L548.0 128.5 L542.0 150.5 L541.0 172.0 L544.0 190.0 L550.0 206.0 L560.0 222.5 L571.0 235.5 L586.5 247.0 L602.5 254.5 L618.5 258.5 L640.0 259.5 L662.0 255.5 L680.0 247.0 L693.5 236.5 L707.0 220.0 L712.5 210.0 L712.5 207.5 L681.0 196.0 L677.5 196.0 L671.0 206.5 L664.5 214.0 L658.0 218.5 L648.0 223.0 L640.0 225.0 L629.5 225.0 L619.5 223.0 L608.5 218.5 L601.0 213.0 L593.5 204.5 L587.0 194.0 L583.5 185.0 L581.5 175.0 L581.5 154.5 L585.5 138.5 L590.0 129.5 L598.0 119.5 L606.5 113.0 L623.5 106.5 L640.0 106.5 L651.0 109.5 L659.0 113.5 L670.0 124.0 L676.5 136.5 L710.0 127.5 L711.5 126.0 L711.5 122.5 L709.0 116.5 L699.5 102.0 L687.5 90.0 L669.0 79.0 L658.0 75.0 L648.0 73.0 L618.5 73.0 Z M809.5 73.0 L794.5 77.0 L774.5 86.5 L767.0 92.0 L754.0 105.0 L747.5 114.5 L740.0 129.5 L734.0 153.5 L734.0 176.0 L736.0 188.0 L742.0 206.0 L752.5 224.0 L765.0 237.5 L776.5 246.0 L789.5 252.5 L811.5 258.5 L841.0 258.5 L847.0 257.5 L868.0 250.5 L884.5 239.5 L898.0 225.0 L905.5 213.0 L905.0 210.5 L871.5 200.0 L860.5 214.0 L853.0 219.5 L838.0 225.0 L818.5 225.0 L810.5 223.0 L797.5 217.5 L784.5 205.5 L775.5 189.0 L773.5 177.5 L774.5 176.5 L776.5 177.5 L910.0 177.5 L911.5 173.0 L911.5 149.5 L909.5 138.5 L902.5 118.5 L898.0 110.5 L889.5 99.0 L875.0 86.5 L859.0 78.0 L850.0 75.0 L832.0 72.0 Z M773.5 147.5 L775.5 139.5 L780.0 129.5 L789.0 118.5 L803.5 109.5 L819.5 105.5 L838.0 106.5 L844.0 108.5 L854.5 114.5 L865.0 125.5 L871.0 137.5 L873.0 145.5 L872.0 149.0 L774.5 149.0 Z M485.5 87.0 L478.0 81.5 L460.0 74.0 L447.0 72.0 L427.5 73.0 L418.5 75.0 L404.5 82.0 L399.0 86.0 L386.0 99.5 L386.5 88.5 L385.5 87.0 L385.0 76.0 L348.0 76.5 L348.5 256.5 L386.5 256.0 L386.5 146.5 L387.5 139.5 L392.0 127.5 L400.0 117.5 L412.5 109.5 L422.5 106.5 L437.0 106.5 L452.0 112.0 L462.5 122.5 L468.0 134.5 L469.0 151.0 L470.0 152.5 L470.0 256.0 L507.5 256.0 L507.5 131.5 L503.5 113.5 L497.0 100.5 Z M263.5 5.0 L263.5 44.0 L300.0 44.5 L301.5 36.0 L300.5 5.5 Z M4.5 5.0 L4.0 7.0 L22.0 52.5 L27.0 69.0 L44.0 112.5 L56.0 148.0 L97.0 256.0 L140.0 256.5 L145.5 245.0 L153.5 221.5 L179.5 155.0 L186.5 133.5 L215.5 57.0 L220.5 40.5 L231.5 14.0 L233.5 5.5 L192.0 5.5 L153.0 117.0 L122.0 202.0 L119.5 205.0 L91.5 125.5 L87.5 117.0 L70.5 66.5 L47.0 5.5 Z M952.5 4.0 L949.0 5.5 L949.0 256.0 L987.0 256.5 L987.5 4.5 Z"/>
+          </svg>
+          <span class="logo-tm">TM</span>
+        </span>
+        <span class="logo-divider"></span>
+        <span class="logo-cn">深澈</span>
+      </a>
+      <div class="nav-links">
+        <a href="#features">功能</a>
+        <a href="#trust">为什么选择</a>
+        <a href="#pricing">专业版</a>
+        <a href="#library">特征库</a>
+        <a href="#download">下载</a>
+      </div>
+      <div class="nav-right">
+        <a class="icon-btn" href="#" aria-label="GitHub 仓库" title="GitHub 仓库">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5C5.73.5.98 5.24.98 11.52c0 5.02 3.26 9.28 7.78 10.78.57.1.78-.25.78-.55v-2.06c-3.17.69-3.83-1.36-3.83-1.36-.52-1.31-1.26-1.66-1.26-1.66-1.03-.7.08-.69.08-.69 1.13.08 1.73 1.16 1.73 1.16 1.01 1.73 2.65 1.23 3.3.94.1-.73.4-1.23.72-1.51-2.53-.29-5.19-1.27-5.19-5.63 0-1.24.44-2.26 1.16-3.06-.12-.29-.5-1.45.11-3.02 0 0 .95-.3 3.1 1.17a10.7 10.7 0 0 1 5.64 0c2.15-1.47 3.1-1.17 3.1-1.17.61 1.57.23 2.73.11 3.02.72.8 1.16 1.82 1.16 3.06 0 4.37-2.66 5.34-5.2 5.62.41.36.77 1.06.77 2.14v3.17c0 .3.21.66.79.55 4.51-1.51 7.77-5.76 7.77-10.78C23.02 5.24 18.27.5 12 .5Z"/></svg>
+        </a>
+        <a class="btn btn-primary btn-sm" href="#download">免费下载</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- 首屏 -->
+  <header class="hero" id="top">
+    <div class="wrap">
+      <div class="hero-copy">
+        <div class="eyebrow">开源免费 · 无广告 · 无捆绑</div>
+        <h1>新机到手，<br><em>一键清爽</em></h1>
+        <p class="hero-sub">专门清理国内流氓软件的免费工具，针对360、2345、金山、百度、腾讯全家桶，彻底卸载、清除残留、拦截弹窗，还你一个干净的电脑。</p>
+        <div class="hero-cta">
+          <a href="#download" class="btn btn-primary">免费下载 Windows 版</a>
+          <a href="#pricing" class="btn btn-ghost">查看专业版</a>
+        </div>
+        <div class="trust-row">
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 12l2 2 4-4"/></svg>核心代码开源</span>
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 12l2 2 4-4"/></svg>无广告无捆绑</span>
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 12l2 2 4-4"/></svg>清理可撤销</span>
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 12l2 2 4-4"/></svg>支持 Win7/8/10/11</span>
+        </div>
+      </div>
+
+      <div class="app-window reveal">
+        <div class="window-titlebar">
+          <div class="traffic-light red"></div>
+          <div class="traffic-light yellow"></div>
+          <div class="traffic-light green"></div>
+          <div class="window-title">深澈 Vincel</div>
+        </div>
+        <div class="window-content">
+          <div class="scan-status">
+            <span class="scan-pulse"></span>
+            扫描完成
+          </div>
+          <div class="scan-item">
+            <div class="scan-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M4 12l5 5L20 6"/></svg></div>
+            <div class="scan-item-info">
+              <div class="scan-item-name">360安全卫士</div>
+              <div class="scan-item-path">C:\Program Files (x86)\360\360Safe</div>
+            </div>
+            <span class="risk-badge high">高风险</span>
+          </div>
+          <div class="scan-item">
+            <div class="scan-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M4 12l5 5L20 6"/></svg></div>
+            <div class="scan-item-info">
+              <div class="scan-item-name">2345浏览器</div>
+              <div class="scan-item-path">C:\Users\AppData\Local\2345Explorer</div>
+            </div>
+            <span class="risk-badge high">高风险</span>
+          </div>
+          <div class="scan-item">
+            <div class="scan-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M4 12l5 5L20 6"/></svg></div>
+            <div class="scan-item-info">
+              <div class="scan-item-name">金山毒霸推送服务</div>
+              <div class="scan-item-path">C:\Program Files\Kingsoft\kis\push</div>
+            </div>
+            <span class="risk-badge mid">中风险</span>
+          </div>
+          <div class="scan-item">
+            <div class="scan-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M4 12l5 5L20 6"/></svg></div>
+            <div class="scan-item-info">
+              <div class="scan-item-name">联想电脑管家 <span style="display:inline-block;font-size:10px;background:#722ED1;color:white;padding:1px 5px;border-radius:4px;margin-left:4px;vertical-align:middle;">厂家预装</span></div>
+              <div class="scan-item-path">C:\Program Files\Lenovo\LenovoPcManager</div>
+            </div>
+            <span class="risk-badge mid">中风险</span>
+          </div>
+          <div class="scan-footer">
+            <span>发现 <span class="count">4</span> 个可清理项目</span>
+            <button class="btn btn-primary btn-sm" type="button">一键清理 →</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- 数据条 -->
+  <div class="statusbar">
+    <div class="wrap">
+      <div class="item"><span class="dot"></span>特征库持续更新中</div>
+      <div class="sep"></div>
+      <div class="item"><span class="label">已收录</span><span class="num">300+</span><span class="label">款流氓软件+预装软件特征</span></div>
+      <div class="sep"></div>
+      <div class="item"><span class="label">当前版本</span><span class="num">v1.0.0</span></div>
+      <div class="sep"></div>
+      <div class="item"><span class="label">兼容系统</span><span class="num">Win7 / 8 / 10 / 11</span></div>
+    </div>
+  </div>
+
+  <!-- 核心功能 -->
+  <section class="section" id="features">
+    <div class="wrap">
+      <div class="section-head">
+        <div class="eyebrow">核心功能</div>
+        <h2>新电脑到手，这一个工具就够了</h2>
+        <p>从卸载流氓软件到清理品牌预装，从安装监控到弹窗拦截，新电脑开荒一步到位。</p>
+      </div>
+      <div class="feature-grid">
+        <div class="feature-card reveal">
+          <div class="fico">🧹</div>
+          <div class="fhead"><h3>一键强制卸载</h3><span class="tag tag-free">免费</span></div>
+          <p>深度扫描流氓软件、品牌预装冗余、后台服务、计划任务、注册表残留和文件垃圾，管理员权限彻底删除，不留痕迹。</p>
+        </div>
+        <div class="feature-card reveal">
+          <div class="fico">💾</div>
+          <div class="fhead"><h3>自动备份可撤销</h3><span class="tag tag-free">免费</span></div>
+          <p>每次清理前自动备份被删除的文件和注册表，误删一键恢复，不用担心删错东西，清理更放心。</p>
+        </div>
+        <div class="feature-card reveal">
+          <div class="fico">📦</div>
+          <div class="fhead"><h3>安装包监控</h3><span class="tag tag-free">免费</span></div>
+          <p>检测安装包运行，及时提醒捆绑软件，避免下一步下一步点过去，不知不觉装了一堆全家桶。</p>
+        </div>
+        <div class="feature-card reveal">
+          <div class="fico">📊</div>
+          <div class="fhead"><h3>弹窗来源统计</h3><span class="tag tag-free">免费</span></div>
+          <p>自动统计每天弹出的广告窗口，告诉你是谁在弹广告、弹了多少次，精准定位流氓软件。</p>
+        </div>
+        <div class="feature-card reveal">
+          <div class="fico">🛡️</div>
+          <div class="fhead"><h3>实时防护</h3><span class="tag tag-pro">专业版</span></div>
+          <p>在流氓软件试图安装的瞬间拦截，把"事后清理"变成"不用清理"，从源头挡住捆绑安装。</p>
+        </div>
+        <div class="feature-card reveal">
+          <div class="fico">🔕</div>
+          <div class="fhead"><h3>智能弹窗拦截</h3><span class="tag tag-pro">专业版</span></div>
+          <p>自动识别并关闭广告弹窗，不用手动关，办公、玩游戏、看视频再也不会被广告打断。</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 为什么选择 -->
+  <section class="section section-alt" id="trust">
+    <div class="wrap">
+      <div class="section-head">
+        <div class="eyebrow">为什么选择深澈</div>
+        <h2>我们先做到干净，<br>再帮你清理别人的流氓软件</h2>
+      </div>
+      <div class="trust-grid">
+        <div class="trust-item reveal">
+          <div class="n"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg></div>
+          <div>
+            <h4>核心代码开源，透明无后门</h4>
+            <p>免费版核心代码基于GPLv3协议开源，任何人都可以审计代码，不用担心我们偷偷上传你的文件。</p>
+          </div>
+        </div>
+        <div class="trust-item reveal">
+          <div class="n"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M8 8l8 8M16 8l-8 8"/></svg></div>
+          <div>
+            <h4>零广告零捆绑，问心无愧</h4>
+            <p>深澈本身不接广告、不做软件分发、不捆绑任何其他软件，安装包干净，卸载无残留。</p>
+          </div>
+        </div>
+        <div class="trust-item reveal">
+          <div class="n"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg></div>
+          <div>
+            <h4>清理前自动备份，误删可恢复</h4>
+            <p>每次清理前自动备份被删除的文件和注册表项，清理后如果发现异常，一键撤销恢复。</p>
+          </div>
+        </div>
+        <div class="trust-item reveal">
+          <div class="n"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></svg></div>
+          <div>
+            <h4>仅匿名统计，不收集隐私</h4>
+            <p>仅匿名统计功能使用数据，用于改进产品，不收集你的文件、路径、个人信息，数据不出本地。</p>
+          </div>
+        </div>
+        <div class="trust-item reveal">
+          <div class="n"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></div>
+          <div>
+            <h4>轻量低占用，不拖慢电脑</h4>
+            <p>安装包仅十几MB，后台占用极低，不会像其他安全软件一样本身就占满CPU和内存。</p>
+          </div>
+        </div>
+        <div class="trust-item reveal">
+          <div class="n"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg></div>
+          <div>
+            <h4>全系统兼容，老电脑也能用</h4>
+            <p>支持Windows 7 / 8 / 10 / 11，.NET Framework 4.7.2，十年前的老电脑也能流畅运行。</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 价格 -->
+  <section class="section" id="pricing">
+    <div class="wrap">
+      <div class="section-head center">
+        <div class="eyebrow">版本对比</div>
+        <h2>核心清理功能，永远免费</h2>
+        <p>专业版只加主动防护功能，不把基础清理锁起来收费。</p>
+      </div>
+
+      <div class="price-grid">
+        <div class="price-card reveal">
+          <div class="price-card-top"><h3>免费版</h3><span class="tag tag-free">永久免费</span></div>
+          <div class="price-amount"><span class="n">¥0</span><span class="u">永久使用</span></div>
+          <div class="price-note">所有基础清理功能，永久免费</div>
+          <ul class="price-list">
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M4 12l5 5L20 6"/></svg>一键扫描 + 强制卸载流氓软件</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M4 12l5 5L20 6"/></svg>自动备份，一键撤销清理</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M4 12l5 5L20 6"/></svg>安装包监控提醒</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M4 12l5 5L20 6"/></svg>弹窗来源统计</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M4 12l5 5L20 6"/></svg>开机自启管理</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M4 12l5 5L20 6"/></svg>特征库永久免费更新</li>
+            <li class="dim"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M6 6l12 12M18 6L6 18"/></svg>实时防护 / 弹窗拦截</li>
+          </ul>
+          <a href="#download" class="btn btn-ghost btn-block">免费下载</a>
+        </div>
+
+        <div class="price-card featured reveal">
+          <div class="price-card-top"><h3>专业版 · 年卡</h3><span class="tag tag-soon">即将上线</span></div>
+          <div class="price-amount"><span class="n">¥19</span><span class="u">/年</span></div>
+          <div class="price-note">每年统一19元，无续费涨价，7天免费试用</div>
+          <ul class="price-list">
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M4 12l5 5L20 6"/></svg>包含免费版全部功能</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M4 12l5 5L20 6"/></svg>实时防护，拦截流氓软件安装</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M4 12l5 5L20 6"/></svg>智能弹窗拦截，自动关广告</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M4 12l5 5L20 6"/></svg>云特征库实时更新</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M4 12l5 5L20 6"/></svg>优先技术支持</li>
+          </ul>
+          <div class="price-hook">新电脑必备，一年不到一杯奶茶钱，再也不用手动删流氓软件。</div>
+          <button class="btn btn-primary btn-block" disabled style="opacity:0.6;cursor:not-allowed;">即将上线，敬请期待</button>
+        </div>
+
+        <div class="price-card reveal">
+          <div class="price-card-top"><h3>专业版 · 终身</h3><span class="tag tag-soon">即将上线</span></div>
+          <div class="price-amount"><span class="n">¥199</span><span class="u">/终身</span></div>
+          <div class="price-note">一次购买，终身使用，终身更新</div>
+          <ul class="price-list">
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M4 12l5 5L20 6"/></svg>包含年卡全部功能</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M4 12l5 5L20 6"/></svg>终身免费更新所有功能</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M4 12l5 5L20 6"/></svg>最多2台设备同时使用</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M4 12l5 5L20 6"/></svg>专属技术支持群</li>
+          </ul>
+          <div class="price-hook">买一次用到电脑退休，不用每年续费，适合长期使用的用户。</div>
+          <button class="btn btn-ghost btn-block" disabled style="opacity:0.6;cursor:not-allowed;">即将上线，敬请期待</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 特征库 -->
+  <section class="section section-alt" id="library">
+    <div class="wrap">
+      <div class="lib-wrap">
+        <div>
+          <div class="eyebrow">特征库</div>
+          <h2 style="font-size:30px; margin-bottom:16px; font-weight:700;">持续更新的<br>流氓软件黑名单</h2>
+          <p style="color:var(--ink-soft); font-size:15px; margin-bottom:20px; line-height:1.7;">特征库持续更新，覆盖国内常见的全家桶、捆绑软件、弹窗广告程序，新发现的流氓软件会第一时间加入。</p>
+          <div class="lib-version">特征库版本 <b>v2026.08.04</b> · 持续更新</div>
+        </div>
+        <div class="lib-stats reveal">
+          <div class="lib-stat"><div class="v">200+</div><div class="l">已收录流氓软件特征</div></div>
+          <div class="lib-stat"><div class="v">7*24</div><div class="l">持续监控新样本</div></div>
+          <div class="lib-stat"><div class="v">100%</div><div class="l">免费版也能更新</div></div>
+          <div class="lib-stat"><div class="v">0</div><div class="l">正常软件误报率</div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 下载 -->
+  <section class="section" id="download">
+    <div class="wrap">
+      <div class="dl-panel reveal">
+        <div>
+          <h2>现在就给电脑来个大扫除</h2>
+          <p style="color:rgba(255,255,255,0.7); font-size:15px; max-width:420px; line-height:1.6;">核心功能永久免费，不注册、不登录，下载就能用，开学季新电脑必备。</p>
+          <div class="dl-meta">
+            <span>Windows 7 / 8 / 10 / 11</span>
+            <span>·</span>
+            <span>.NET Framework 4.7.2</span>
+            <span>·</span>
+            <span>v1.0.0</span>
+          </div>
+          <div class="dl-note">下载即代表同意用户协议与免责声明</div>
+        </div>
+        <a href="VincelSetup.zip" class="btn btn-primary" download="VincelSetup.zip">免费下载 Windows 版 →</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- 关于和打赏 -->
+  <section class="section" style="padding-top:0;" id="about">
+    <div class="wrap">
+      <div class="about-grid">
+        <div class="about-card reveal">
+          <h3>关于深澈</h3>
+          <p>深澈（Vincel）是一款专门针对国内流氓软件的清理工具，由独立开发者开发，初衷是让每个人都能用上干净的电脑，不用被各种全家桶和广告弹窗折磨。</p>
+          <p>免费版核心代码开源，欢迎技术爱好者审计、提交建议，我们不做广告、不做捆绑，只做干净好用的工具。</p>
+          <div class="license-row">
+            <span class="tag tag-free">免费版 GPLv3 开源</span>
+            <span class="tag tag-pro">专业版商业授权</span>
+            <span class="tag" style="background:var(--bg); color:var(--ink-soft);">C# + WebView2</span>
+          </div>
+        </div>
+        <div class="donate-card reveal">
+          <h3>支持作者</h3>
+          <div class="qr-block">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M14 14h3v3h-3zM19 14h2v2h-2zM14 19h2v2h-2zM19 19h2v2h-2z"/></svg>
+            打赏二维码占位
+          </div>
+          <p class="donate-note">开发不易，如果深澈帮到了你，<br>可以请作者喝杯咖啡 ☕</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 页脚 -->
+  <footer>
+    <div class="wrap">
+      <div class="foot-top">
+        <div>
+          <div class="foot-brand site-logo">
+            <svg class="logo-mark" viewBox="0 0 436 441" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Vincel">
+              <path d="M4.5 73.0 L4.0 75.0 L10.5 85.5 L69.5 201.5 L185.5 435.0 L280.0 435.5 L280.5 432.5 L216.0 302.5 L98.0 73.5 Z M430.0 4.0 L337.5 4.5 L245.5 180.0 L224.5 217.5 L218.0 232.0 L231.5 256.5 L264.5 322.5 L266.5 322.0 L287.0 281.5 L294.0 270.0 L319.0 219.5 L327.0 206.0 L358.0 144.5 L377.0 110.0 L384.0 94.5 L430.5 7.0 Z"/>
+            </svg>
+            <span class="logo-word">
+              <svg class="logo-wordmark" viewBox="0 0 993 262" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Vincel">
+                <path fill-rule="evenodd" d="M263.5 75.0 L263.0 256.0 L301.0 256.5 L301.5 82.5 L300.5 75.5 Z M604.5 76.0 L587.5 83.5 L575.0 92.0 L567.0 99.0 L553.5 117.5 L548.0 128.5 L542.0 150.5 L541.0 172.0 L544.0 190.0 L550.0 206.0 L560.0 222.5 L571.0 235.5 L586.5 247.0 L602.5 254.5 L618.5 258.5 L640.0 259.5 L662.0 255.5 L680.0 247.0 L693.5 236.5 L707.0 220.0 L712.5 210.0 L712.5 207.5 L681.0 196.0 L677.5 196.0 L671.0 206.5 L664.5 214.0 L658.0 218.5 L648.0 223.0 L640.0 225.0 L629.5 225.0 L619.5 223.0 L608.5 218.5 L601.0 213.0 L593.5 204.5 L587.0 194.0 L583.5 185.0 L581.5 175.0 L581.5 154.5 L585.5 138.5 L590.0 129.5 L598.0 119.5 L606.5 113.0 L623.5 106.5 L640.0 106.5 L651.0 109.5 L659.0 113.5 L670.0 124.0 L676.5 136.5 L710.0 127.5 L711.5 126.0 L711.5 122.5 L709.0 116.5 L699.5 102.0 L687.5 90.0 L669.0 79.0 L658.0 75.0 L648.0 73.0 L618.5 73.0 Z M809.5 73.0 L794.5 77.0 L774.5 86.5 L767.0 92.0 L754.0 105.0 L747.5 114.5 L740.0 129.5 L734.0 153.5 L734.0 176.0 L736.0 188.0 L742.0 206.0 L752.5 224.0 L765.0 237.5 L776.5 246.0 L789.5 252.5 L811.5 258.5 L841.0 258.5 L847.0 257.5 L868.0 250.5 L884.5 239.5 L898.0 225.0 L905.5 213.0 L905.0 210.5 L871.5 200.0 L860.5 214.0 L853.0 219.5 L838.0 225.0 L818.5 225.0 L810.5 223.0 L797.5 217.5 L784.5 205.5 L775.5 189.0 L773.5 177.5 L774.5 176.5 L776.5 177.5 L910.0 177.5 L911.5 173.0 L911.5 149.5 L909.5 138.5 L902.5 118.5 L898.0 110.5 L889.5 99.0 L875.0 86.5 L859.0 78.0 L850.0 75.0 L832.0 72.0 Z M773.5 147.5 L775.5 139.5 L780.0 129.5 L789.0 118.5 L803.5 109.5 L819.5 105.5 L838.0 106.5 L844.0 108.5 L854.5 114.5 L865.0 125.5 L871.0 137.5 L873.0 145.5 L872.0 149.0 L774.5 149.0 Z M485.5 87.0 L478.0 81.5 L460.0 74.0 L447.0 72.0 L427.5 73.0 L418.5 75.0 L404.5 82.0 L399.0 86.0 L386.0 99.5 L386.5 88.5 L385.5 87.0 L385.0 76.0 L348.0 76.5 L348.5 256.5 L386.5 256.0 L386.5 146.5 L387.5 139.5 L392.0 127.5 L400.0 117.5 L412.5 109.5 L422.5 106.5 L437.0 106.5 L452.0 112.0 L462.5 122.5 L468.0 134.5 L469.0 151.0 L470.0 152.5 L470.0 256.0 L507.5 256.0 L507.5 131.5 L503.5 113.5 L497.0 100.5 Z M263.5 5.0 L263.5 44.0 L300.0 44.5 L301.5 36.0 L300.5 5.5 Z M4.5 5.0 L4.0 7.0 L22.0 52.5 L27.0 69.0 L44.0 112.5 L56.0 148.0 L97.0 256.0 L140.0 256.5 L145.5 245.0 L153.5 221.5 L179.5 155.0 L186.5 133.5 L215.5 57.0 L220.5 40.5 L231.5 14.0 L233.5 5.5 L192.0 5.5 L153.0 117.0 L122.0 202.0 L119.5 205.0 L91.5 125.5 L87.5 117.0 L70.5 66.5 L47.0 5.5 Z M952.5 4.0 L949.0 5.5 L949.0 256.0 L987.0 256.5 L987.5 4.5 Z"/>
+              </svg>
+              <span class="logo-tm">TM</span>
+            </span>
+            <span class="logo-divider"></span>
+            <span class="logo-cn">深澈</span>
+          </div>
+          <p style="max-width:260px; font-size:13px; line-height:1.6;">新电脑一键清爽，专门清理国内流氓软件的免费工具。</p>
+        </div>
+        <div class="foot-cols">
+          <div class="foot-col">
+            <h5>产品</h5>
+            <a href="#features">功能介绍</a>
+            <a href="#pricing">专业版</a>
+            <a href="#library">特征库</a>
+            <a href="#download">下载</a>
+          </div>
+          <div class="foot-col">
+            <h5>资源</h5>
+            <a href="#">GitHub 仓库</a>
+            <a href="#">开源协议</a>
+            <a href="#">更新日志</a>
+            <a href="#">问题反馈</a>
+          </div>
+          <div class="foot-col">
+            <h5>关于</h5>
+            <a href="#about">关于作者</a>
+            <a href="#">用户协议</a>
+            <a href="#">隐私政策</a>
+            <a href="#">联系我们</a>
+          </div>
+        </div>
+      </div>
+      <div class="foot-bottom">
+        <span>© 2026 深澈 Vincel · 免费版基于 GPLv3 协议开源</span>
+        <span>干净 · 专业 · 无捆绑</span>
+      </div>
+    </div>
+  </footer>
+
+<script>
+  // 平滑滚动
+  (function(){
+    var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    document.querySelectorAll('a[href^="#"]').forEach(function(link){
+      var id = link.getAttribute('href').slice(1);
+      var target = id ? document.getElementById(id) : null;
+      if(!target) return;
+      link.addEventListener('click', function(e){
+        e.preventDefault();
+        target.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
+      });
+    });
+  })();
+
+  // 滚动淡入动画
+  // Win7 默认浏览器 IE11 不支持 IntersectionObserver，且没有 matchMedia 的 .matches
+  // 在极老环境下也可能行为不一致——任何一步出问题都不能让 .reveal 卡在 opacity:0
+  // 永远显示不出来，那样访客看到的就是大片空白区块。所以整体包一层 try/catch，
+  // 一旦检测到环境不支持，直接让所有内容显示，退化成"没有滚动动画"而不是"看不到内容"。
+  (function(){
+    var items = document.querySelectorAll('.reveal');
+    function showAll(){ items.forEach(function(el){ el.classList.add('in'); }); }
+
+    try {
+      var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if(reduce){ showAll(); return; }
+
+      if(typeof IntersectionObserver === 'undefined'){ showAll(); return; }
+
+      var obs = new IntersectionObserver(function(entries){
+        entries.forEach(function(e){
+          if(e.isIntersecting){ e.target.classList.add('in'); obs.unobserve(e.target); }
+        });
+      }, {threshold:0.15});
+      items.forEach(function(el){ obs.observe(el); });
+    } catch(e) {
+      showAll();
+    }
+  })();
+</script>
+</body>
+</html>
